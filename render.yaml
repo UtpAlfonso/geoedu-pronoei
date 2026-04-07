@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: geoedu-pronoei-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: TIDB_HOST
+        value: gateway01.us-west-2.prod.aws.tidbcloud.com
+      - key: TIDB_PORT
+        value: "4000"
+      - key: TIDB_USER
+        value: 3jhmtKeDVsH7JWR.root
+      - key: TIDB_PASSWORD
+        sync: false
+      - key: TIDB_DB
+        value: educacion_inicial

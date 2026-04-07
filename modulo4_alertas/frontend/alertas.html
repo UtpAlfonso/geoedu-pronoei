@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GeoEdu — Alertas de Programas Inactivos</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f0f2f5; min-height:100vh; }
+    header { background:#1a3a5c; color:white; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; }
+    header h1 { font-size:18px; font-weight:600; }
+    header nav { display:flex; gap:16px; }
+    header nav a { color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; }
+    header nav a:hover { color:white; }
+    .controles { background:white; padding:12px 24px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; border-bottom:1px solid #ddd; }
+    .controles label { font-size:13px; color:#555; font-weight:500; }
+    .controles select, .controles input { padding:6px 10px; border:1px solid #ccc; border-radius:6px; font-size:13px; }
+    .controles button { padding:6px 16px; background:#c62828; color:white; border:none; border-radius:6px; font-size:13px; cursor:pointer; }
+    .controles button:hover { background:#b71c1c; }
+    .contenido { padding:20px 24px; }
+    .tarjetas { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px; }
+    .tarjeta { background:white; border-radius:10px; padding:16px 20px; border:1px solid #e5e5e5; }
+    .tarjeta.alerta { border-left:4px solid #c62828; }
+    .tarjeta .num { font-size:30px; font-weight:700; }
+    .tarjeta.alerta .num { color:#c62828; }
+    .tarjeta .num.azul { color:#1a3a5c; }
+    .tarjeta .lbl { font-size:12px; color:#888; margin-top:4px; }
+    .grid-inferior { display:grid; grid-template-columns:1fr 2fr; gap:16px; }
+    .panel-ugel { background:white; border-radius:10px; border:1px solid #e5e5e5; overflow:hidden; }
+    .panel-ugel h3 { font-size:13px; font-weight:600; padding:12px 16px; background:#f8f8f8; border-bottom:1px solid #eee; color:#333; }
+    .ugel-lista { overflow-y:auto; max-height:420px; }
+    .ugel-item { display:flex; justify-content:space-between; align-items:center; padding:9px 16px; border-bottom:1px solid #f5f5f5; font-size:13px; cursor:pointer; transition:background 0.1s; }
+    .ugel-item:hover { background:#fef3f3; }
+    .ugel-item .ugel-nombre { color:#333; font-weight:500; }
+    .ugel-item .ugel-count { background:#fdecea; color:#c62828; font-size:11px; font-weight:600; padding:2px 8px; border-radius:10px; }
+    .tabla-wrap { background:white; border-radius:10px; border:1px solid #e5e5e5; overflow:hidden; }
+    .tabla-wrap h3 { font-size:13px; font-weight:600; padding:12px 16px; background:#f8f8f8; border-bottom:1px solid #eee; color:#333; display:flex; justify-content:space-between; align-items:center; }
+    .tabla-wrap h3 input { padding:5px 10px; border:1px solid #ccc; border-radius:6px; font-size:12px; width:200px; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    thead tr { background:#1a3a5c; color:white; }
+    thead th { padding:9px 14px; text-align:left; font-weight:500; }
+    tbody tr { border-bottom:1px solid #f5f5f5; transition:background 0.1s; }
+    tbody tr:hover { background:#fef3f3; }
+    tbody td { padding:9px 14px; color:#333; }
+    .dias { font-weight:700; }
+    .dias.critico { color:#c62828; }
+    .dias.alto    { color:#e65100; }
+    .dias.medio   { color:#f57f17; }
+    .badge-area { display:inline-block; font-size:11px; padding:2px 7px; border-radius:10px; font-weight:500; }
+    .badge-area.rural  { background:#e8f5e9; color:#2e7d32; }
+    .badge-area.urbana { background:#e3f2fd; color:#1565c0; }
+    #loading { text-align:center; padding:30px; color:#999; font-size:13px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>GeoEdu PRONOEI — Alertas de Programas Inactivos</h1>
+  <nav>
+    <a href="../../modulo1_mapa/frontend/index.html">Mapa</a>
+    <a href="../../modulo2_brecha/frontend/ranking.html">Brecha</a>
+    <a href="../../modulo3_dashboard/frontend/dashboard.html">Dashboard</a>
+  </nav>
+</header>
+
+<div class="controles">
+  <label>Sin actualizar más de</label>
+  <select id="selectMeses">
+    <option value="3">3 meses</option>
+    <option value="6" selected>6 meses</option>
+    <option value="12">12 meses</option>
+    <option value="24">24 meses</option>
+  </select>
+  <button onclick="cargarAlertas()">Buscar inactivos</button>
+</div>
+
+<div class="contenido">
+
+  <div class="tarjetas">
+    <div class="tarjeta alerta">
+      <div class="num" id="tInactivos">—</div>
+      <div class="lbl">Programas sin actualizar</div>
+    </div>
+    <div class="tarjeta">
+      <div class="num azul" id="tRuralInactivo">—</div>
+      <div class="lbl">Inactivos en zona rural</div>
+    </div>
+    <div class="tarjeta">
+      <div class="num azul" id="tUrbanaInactivo">—</div>
+      <div class="lbl">Inactivos en zona urbana</div>
+    </div>
+  </div>
+
+  <div class="grid-inferior">
+
+    <!-- Panel UGEL con más inactivos -->
+    <div class="panel-ugel">
+      <h3>UGEL/DRE con más inactivos</h3>
+      <div class="ugel-lista" id="ugelLista">
+        <div id="loadingUgel" style="text-align:center;padding:20px;color:#999;font-size:13px">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- Tabla principal -->
+    <div class="tabla-wrap">
+      <h3>
+        Programas inactivos
+        <input type="text" id="buscarPrograma" placeholder="Buscar por nombre o distrito..." oninput="filtrarTabla()"/>
+      </h3>
+      <div id="loading">Cargando alertas...</div>
+      <table id="tablaAlertas" style="display:none">
+        <thead>
+          <tr>
+            <th>Programa</th>
+            <th>Distrito</th>
+            <th>Departamento</th>
+            <th>UGEL</th>
+            <th>Área</th>
+            <th>Días sin actualizar</th>
+            <th>Última actualización</th>
+          </tr>
+        </thead>
+        <tbody id="tablaBody"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const API = "http://127.0.0.1:8000";
+  let datosAlertas = [];
+
+  function clasificarDias(dias) {
+    if (dias >= 365) return "critico";
+    if (dias >= 180) return "alto";
+    return "medio";
+  }
+
+  async function cargarConteo() {
+    const res  = await fetch(`${API}/api/alertas/conteo`);
+    const data = await res.json();
+    document.getElementById("tInactivos").textContent     = data.total_inactivos?.toLocaleString() ?? "0";
+    document.getElementById("tRuralInactivo").textContent = data.rural_inactivos?.toLocaleString() ?? "0";
+    document.getElementById("tUrbanaInactivo").textContent= data.urbana_inactivos?.toLocaleString() ?? "0";
+  }
+
+  async function cargarResumenUgel() {
+    const res  = await fetch(`${API}/api/alertas/resumen`);
+    const data = await res.json();
+    const lista = document.getElementById("ugelLista");
+    document.getElementById("loadingUgel").style.display = "none";
+    lista.innerHTML = data.data.slice(0, 20).map(u => `
+      <div class="ugel-item">
+        <div>
+          <div class="ugel-nombre">${u.D_DREUGEL}</div>
+          <div style="font-size:11px;color:#aaa">${u.D_DPTO}</div>
+        </div>
+        <span class="ugel-count">${u.programas_inactivos}</span>
+      </div>
+    `).join("");
+  }
+
+  async function cargarAlertas() {
+    const meses = document.getElementById("selectMeses").value;
+    document.getElementById("loading").style.display = "block";
+    document.getElementById("tablaAlertas").style.display = "none";
+
+    const res  = await fetch(`${API}/api/alertas/inactivos?meses=${meses}`);
+    const data = await res.json();
+    datosAlertas = data.programas;
+    renderizarTabla(datosAlertas);
+  }
+
+  function renderizarTabla(lista) {
+    const tbody = document.getElementById("tablaBody");
+    tbody.innerHTML = "";
+    lista.forEach(p => {
+      const clase = clasificarDias(p.dias_sin_actualizar ?? 0);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="font-weight:500">${p.CEN_EDU}</td>
+        <td>${p.D_DIST}</td>
+        <td>${p.D_DPTO}</td>
+        <td style="font-size:12px;color:#777">${p.D_DREUGEL}</td>
+        <td><span class="badge-area ${p.DAREACENSO?.toLowerCase()}">${p.DAREACENSO}</span></td>
+        <td><span class="dias ${clase}">${p.dias_sin_actualizar ?? '—'} días</span></td>
+        <td style="color:#aaa;font-size:12px">${p.FECHA_ACT}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("tablaAlertas").style.display = "table";
+  }
+
+  function filtrarTabla() {
+    const buscar = document.getElementById("buscarPrograma").value.trim().toUpperCase();
+    if (!buscar) { renderizarTabla(datosAlertas); return; }
+    const filtrada = datosAlertas.filter(p =>
+      p.CEN_EDU?.toUpperCase().includes(buscar) ||
+      p.D_DIST?.toUpperCase().includes(buscar)  ||
+      p.D_DPTO?.toUpperCase().includes(buscar)
+    );
+    renderizarTabla(filtrada);
+  }
+
+  // Inicializar
+  cargarConteo();
+  cargarResumenUgel();
+  cargarAlertas();
+</script>
+</body>
+</html>

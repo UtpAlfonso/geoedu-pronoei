@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GeoEdu — Índice de Brecha por Distrito</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f5f5f5; min-height:100vh; }
+    header { background:#1a3a5c; color:white; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; }
+    header h1 { font-size:18px; font-weight:600; }
+    header a { color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; }
+    header a:hover { color:white; }
+    .controles { background:white; padding:12px 24px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; border-bottom:1px solid #ddd; }
+    .controles label { font-size:13px; color:#555; font-weight:500; }
+    .controles select, .controles input { padding:6px 10px; border:1px solid #ccc; border-radius:6px; font-size:13px; }
+    .controles button { padding:6px 16px; background:#1a3a5c; color:white; border:none; border-radius:6px; font-size:13px; cursor:pointer; }
+    .controles button:hover { background:#254f7a; }
+    .stats-top { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:16px 24px; }
+    .stat-card { background:white; border-radius:8px; padding:14px 18px; border:1px solid #e5e5e5; }
+    .stat-card .num { font-size:28px; font-weight:700; color:#1a3a5c; }
+    .stat-card .lbl { font-size:12px; color:#888; margin-top:4px; }
+    .contenido { padding:0 24px 24px; }
+    .tabla-wrap { background:white; border-radius:8px; border:1px solid #e5e5e5; overflow:hidden; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    thead tr { background:#1a3a5c; color:white; }
+    thead th { padding:10px 14px; text-align:left; font-weight:500; }
+    tbody tr { border-bottom:1px solid #f0f0f0; cursor:pointer; transition:background 0.1s; }
+    tbody tr:hover { background:#f0f6ff; }
+    tbody td { padding:10px 14px; color:#333; }
+    .badge { display:inline-block; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:500; }
+    .badge.critico  { background:#fdecea; color:#c62828; }
+    .badge.alto     { background:#fff3e0; color:#e65100; }
+    .badge.medio    { background:#fff9c4; color:#f57f17; }
+    .badge.bajo     { background:#e8f5e9; color:#2e7d32; }
+    .barra { height:8px; border-radius:4px; background:#e0e0e0; margin-top:4px; }
+    .barra-fill { height:8px; border-radius:4px; background:#1a3a5c; }
+    #loading { text-align:center; padding:40px; color:#999; font-size:14px; }
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.activo { display:flex; }
+    .modal { background:white; border-radius:10px; width:90%; max-width:600px; max-height:80vh; overflow-y:auto; padding:20px; }
+    .modal h3 { font-size:16px; color:#1a3a5c; margin-bottom:12px; }
+    .modal-item { padding:8px 0; border-bottom:1px solid #eee; font-size:13px; }
+    .modal-item:last-child { border-bottom:none; }
+    .modal-close { float:right; background:none; border:none; font-size:18px; cursor:pointer; color:#999; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>GeoEdu PRONOEI — Índice de Brecha por Distrito</h1>
+  <a href="../../modulo1_mapa/frontend/index.html">← Volver al Mapa</a>
+</header>
+<div class="controles">
+  <label>Mostrar top</label>
+  <select id="selectTop">
+    <option value="20">20 distritos</option>
+    <option value="50" selected>50 distritos</option>
+    <option value="100">100 distritos</option>
+    <option value="200">200 distritos</option>
+  </select>
+  <label>Buscar</label>
+  <input type="text" id="buscarDistrito" placeholder="Distrito o provincia..." style="width:200px"/>
+  <button onclick="cargarRanking()">Actualizar</button>
+</div>
+<div class="stats-top">
+  <div class="stat-card"><div class="num" id="statDistritos">—</div><div class="lbl">Distritos analizados</div></div>
+  <div class="stat-card"><div class="num" id="statCriticos">—</div><div class="lbl">Distritos críticos (≤2 programas)</div></div>
+  <div class="stat-card"><div class="num" id="statPromedio">—</div><div class="lbl">Promedio programas por distrito</div></div>
+</div>
+<div class="contenido">
+  <div class="tabla-wrap">
+    <div id="loading">Cargando ranking...</div>
+    <table id="tablaRanking" style="display:none">
+      <thead>
+        <tr><th>#</th><th>Distrito</th><th>Provincia</th><th>Departamento</th><th>Programas</th><th>% Rural</th><th>Cobertura</th><th>Nivel</th></tr>
+      </thead>
+      <tbody id="tablaBody"></tbody>
+    </table>
+  </div>
+</div>
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="cerrarModal()">✕</button>
+    <h3 id="modalTitulo"></h3>
+    <div id="modalLista"></div>
+  </div>
+</div>
+<script>
+  const API = "http://127.0.0.1:8000";
+  let datosRanking = [];
+
+  function nivelBrecha(total) {
+    if (total <= 1) return { label:"Crítico", clase:"critico" };
+    if (total <= 3) return { label:"Alto",    clase:"alto" };
+    if (total <= 7) return { label:"Medio",   clase:"medio" };
+    return               { label:"Bajo",    clase:"bajo" };
+  }
+
+  async function cargarRanking() {
+    const top = document.getElementById("selectTop").value;
+    document.getElementById("loading").style.display = "block";
+    document.getElementById("tablaRanking").style.display = "none";
+    const res  = await fetch(`${API}/api/brecha/ranking?top=${top}`);
+    const data = await res.json();
+    datosRanking = data.ranking;
+    renderizarTabla(datosRanking);
+  }
+
+  function renderizarTabla(lista) {
+    const buscar = document.getElementById("buscarDistrito").value.trim().toUpperCase();
+    const filtrada = buscar ? lista.filter(r => r.D_DIST.includes(buscar) || r.D_PROV.includes(buscar)) : lista;
+    const maxProg  = Math.max(...filtrada.map(r => r.total_programas), 1);
+    const criticos = filtrada.filter(r => r.total_programas <= 2).length;
+    const promedio = filtrada.length ? (filtrada.reduce((s,r) => s + r.total_programas, 0) / filtrada.length).toFixed(1) : 0;
+
+    document.getElementById("statDistritos").textContent = filtrada.length.toLocaleString();
+    document.getElementById("statCriticos").textContent  = criticos.toLocaleString();
+    document.getElementById("statPromedio").textContent  = promedio;
+
+    const tbody = document.getElementById("tablaBody");
+    tbody.innerHTML = "";
+    filtrada.forEach((r, i) => {
+      const nivel = nivelBrecha(r.total_programas);
+      const pct   = Math.round((r.total_programas / maxProg) * 100);
+      const tr    = document.createElement("tr");
+      tr.onclick  = () => abrirModal(r.D_DIST, r.D_PROV, r.D_DPTO);
+      tr.innerHTML = `
+        <td style="color:#999;font-weight:600">${i+1}</td>
+        <td style="font-weight:600;color:#1a3a5c">${r.D_DIST}</td>
+        <td>${r.D_PROV}</td>
+        <td>${r.D_DPTO}</td>
+        <td style="font-weight:700">${r.total_programas}</td>
+        <td>${r.pct_rural ?? 0}%</td>
+        <td style="min-width:100px"><div class="barra"><div class="barra-fill" style="width:${pct}%"></div></div></td>
+        <td><span class="badge ${nivel.clase}">${nivel.label}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("tablaRanking").style.display = "table";
+  }
+
+  async function abrirModal(distrito, provincia, dpto) {
+    document.getElementById("modalTitulo").textContent = `Programas en ${distrito} — ${provincia}, ${dpto}`;
+    document.getElementById("modalLista").innerHTML = "<p style='color:#999'>Cargando...</p>";
+    document.getElementById("modalOverlay").classList.add("activo");
+    const res  = await fetch(`${API}/api/brecha/distrito?distrito=${encodeURIComponent(distrito)}&provincia=${encodeURIComponent(provincia)}`);
+    const data = await res.json();
+    if (!data.programas.length) {
+      document.getElementById("modalLista").innerHTML = "<p style='color:#999'>Sin programas registrados.</p>";
+      return;
+    }
+    document.getElementById("modalLista").innerHTML = data.programas.map(p => `
+      <div class="modal-item">
+        <strong>${p.CEN_EDU}</strong><br>
+        <span style="color:#777;font-size:12px">${p.D_TIPOPROG} · ${p.DAREACENSO} · Turno: ${p.D_COD_TUR}</span><br>
+        <span style="color:#aaa;font-size:11px">Actualizado: ${p.FECHA_ACT}</span>
+      </div>
+    `).join("");
+  }
+
+  function cerrarModal() { document.getElementById("modalOverlay").classList.remove("activo"); }
+
+  document.getElementById("buscarDistrito").addEventListener("input", () => renderizarTabla(datosRanking));
+  cargarRanking();
+</script>
+</body>
+</html>

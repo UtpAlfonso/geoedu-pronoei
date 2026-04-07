@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GeoEdu PRONOEI</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f0f2f5; min-height:100vh; display:flex; flex-direction:column; }
+
+    header {
+      background:#1a3a5c;
+      color:white;
+      padding:20px 40px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    header .logo { display:flex; flex-direction:column; }
+    header h1 { font-size:22px; font-weight:700; }
+    header p  { font-size:13px; opacity:0.7; margin-top:3px; }
+    .estado-api {
+      display:flex; align-items:center; gap:8px;
+      font-size:13px; opacity:0.85;
+    }
+    .dot { width:9px; height:9px; border-radius:50%; background:#aaa; flex-shrink:0; }
+    .dot.online  { background:#4caf50; }
+    .dot.offline { background:#f44336; }
+
+    /* Hero */
+    .hero {
+      background:linear-gradient(135deg,#1a3a5c 0%,#2e7d9e 100%);
+      color:white;
+      padding:48px 40px;
+      text-align:center;
+    }
+    .hero h2 { font-size:28px; font-weight:700; margin-bottom:10px; }
+    .hero p  { font-size:15px; opacity:0.8; max-width:580px; margin:0 auto; line-height:1.6; }
+
+    /* Stats rápidas */
+    .stats-hero {
+      display:flex; justify-content:center; gap:40px;
+      margin-top:28px; flex-wrap:wrap;
+    }
+    .stat-h { text-align:center; }
+    .stat-h .n { font-size:32px; font-weight:700; }
+    .stat-h .l { font-size:12px; opacity:0.7; margin-top:2px; }
+
+    /* Grid de módulos */
+    .modulos {
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:20px;
+      padding:32px 40px;
+      max-width:960px;
+      margin:0 auto;
+      width:100%;
+    }
+
+    .modulo-card {
+      background:white;
+      border-radius:12px;
+      border:1px solid #e5e5e5;
+      padding:24px;
+      text-decoration:none;
+      color:inherit;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      transition:transform 0.15s, box-shadow 0.15s;
+      cursor:pointer;
+    }
+    .modulo-card:hover {
+      transform:translateY(-3px);
+      box-shadow:0 6px 20px rgba(0,0,0,0.1);
+    }
+
+    .modulo-header {
+      display:flex; align-items:center; gap:12px;
+    }
+    .modulo-icono {
+      width:44px; height:44px; border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:22px; flex-shrink:0;
+    }
+    .m1 { background:#e3f2fd; }
+    .m2 { background:#fce4ec; }
+    .m3 { background:#e8f5e9; }
+    .m4 { background:#fff3e0; }
+
+    .modulo-titulo { font-size:16px; font-weight:600; color:#1a3a5c; }
+    .modulo-subtitulo { font-size:12px; color:#888; margin-top:1px; }
+    .modulo-desc { font-size:13px; color:#555; line-height:1.55; }
+
+    .modulo-footer {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-top:4px;
+      padding-top:10px;
+      border-top:1px solid #f0f0f0;
+    }
+    .modulo-tags { display:flex; gap:6px; flex-wrap:wrap; }
+    .tag {
+      font-size:11px; padding:2px 8px; border-radius:10px;
+      background:#f0f0f0; color:#555; font-weight:500;
+    }
+    .modulo-btn {
+      font-size:12px; color:#1a3a5c; font-weight:600;
+      display:flex; align-items:center; gap:4px;
+    }
+
+    footer {
+      margin-top:auto;
+      text-align:center;
+      padding:20px;
+      font-size:12px;
+      color:#aaa;
+      border-top:1px solid #e5e5e5;
+      background:white;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <h1>GeoEdu PRONOEI</h1>
+    <p>Sistema de análisis de programas no escolarizados de educación inicial</p>
+  </div>
+  <div class="estado-api">
+    <div class="dot" id="apiDot"></div>
+    <span id="apiEstado">Verificando API...</span>
+  </div>
+</header>
+
+<div class="hero">
+  <h2>Panel de cobertura educativa inicial en el Perú</h2>
+  <p>Visualiza, analiza y monitorea los 17,504 programas PRONOEI a nivel nacional. Identifica brechas, tendencias y alertas por departamento, provincia y distrito.</p>
+  <div class="stats-hero">
+    <div class="stat-h"><div class="n" id="sTotal">—</div><div class="l">Programas PRONOEI</div></div>
+    <div class="stat-h"><div class="n" id="sDptos">—</div><div class="l">Departamentos</div></div>
+    <div class="stat-h"><div class="n" id="sDistritos">—</div><div class="l">Distritos</div></div>
+    <div class="stat-h"><div class="n" id="sRural">—</div><div class="l">Zona rural</div></div>
+  </div>
+</div>
+
+<div class="modulos">
+
+  <a class="modulo-card" href="../modulo1_mapa/frontend/index.html">
+    <div class="modulo-header">
+      <div class="modulo-icono m1">🗺️</div>
+      <div>
+        <div class="modulo-titulo">Módulo 1 — Mapa interactivo</div>
+        <div class="modulo-subtitulo">Visualización geográfica</div>
+      </div>
+    </div>
+    <div class="modulo-desc">
+      Explora los programas PRONOEI sobre un mapa del Perú. Filtra por departamento, área rural/urbana y ciclo de atención. Haz clic en cada programa para ver su detalle.
+    </div>
+    <div class="modulo-footer">
+      <div class="modulo-tags">
+        <span class="tag">Leaflet.js</span>
+        <span class="tag">Filtros</span>
+        <span class="tag">Marcadores</span>
+      </div>
+      <div class="modulo-btn">Abrir →</div>
+    </div>
+  </a>
+
+  <a class="modulo-card" href="../modulo2_brecha/frontend/ranking.html">
+    <div class="modulo-header">
+      <div class="modulo-icono m2">📊</div>
+      <div>
+        <div class="modulo-titulo">Módulo 2 — Índice de brecha</div>
+        <div class="modulo-subtitulo">Distritos más críticos</div>
+      </div>
+    </div>
+    <div class="modulo-desc">
+      Ranking de distritos con menor cobertura de programas PRONOEI. Identifica zonas críticas, con alta proporción rural y sin actualizaciones recientes.
+    </div>
+    <div class="modulo-footer">
+      <div class="modulo-tags">
+        <span class="tag">Ranking</span>
+        <span class="tag">Crítico</span>
+        <span class="tag">Por distrito</span>
+      </div>
+      <div class="modulo-btn">Abrir →</div>
+    </div>
+  </a>
+
+  <a class="modulo-card" href="../modulo3_dashboard/frontend/dashboard.html">
+    <div class="modulo-header">
+      <div class="modulo-icono m3">📈</div>
+      <div>
+        <div class="modulo-titulo">Módulo 3 — Dashboard</div>
+        <div class="modulo-subtitulo">Tendencias y estadísticas</div>
+      </div>
+    </div>
+    <div class="modulo-desc">
+      Gráficos interactivos de distribución por región, tipo de ciclo, gestión y turno. Panel con estadísticas globales del sistema PRONOEI a nivel nacional.
+    </div>
+    <div class="modulo-footer">
+      <div class="modulo-tags">
+        <span class="tag">Chart.js</span>
+        <span class="tag">Estadísticas</span>
+        <span class="tag">Gráficos</span>
+      </div>
+      <div class="modulo-btn">Abrir →</div>
+    </div>
+  </a>
+
+  <a class="modulo-card" href="../modulo4_alertas/frontend/alertas.html">
+    <div class="modulo-header">
+      <div class="modulo-icono m4">🔔</div>
+      <div>
+        <div class="modulo-titulo">Módulo 4 — Alertas</div>
+        <div class="modulo-subtitulo">Programas sin actualizar</div>
+      </div>
+    </div>
+    <div class="modulo-desc">
+      Detecta programas que llevan más de 6 meses sin actualizarse. Filtra por UGEL/DRE y genera reportes de seguimiento para gestores educativos.
+    </div>
+    <div class="modulo-footer">
+      <div class="modulo-tags">
+        <span class="tag">Alertas</span>
+        <span class="tag">Inactivos</span>
+        <span class="tag">Por UGEL</span>
+      </div>
+      <div class="modulo-btn">Abrir →</div>
+    </div>
+  </a>
+
+</div>
+
+<footer>
+  GeoEdu PRONOEI — Datos: MINEDU Perú · Backend: FastAPI · Base de datos: MySQL
+</footer>
+
+<script>
+  const API = "http://127.0.0.1:8000";
+
+  async function verificarAPI() {
+    try {
+      const res  = await fetch(`${API}/api/ping`, { signal: AbortSignal.timeout(3000) });
+      const data = await res.json();
+      document.getElementById("apiDot").className    = "dot online";
+      document.getElementById("apiEstado").textContent = "API conectada";
+      return data;
+    } catch {
+      document.getElementById("apiDot").className    = "dot offline";
+      document.getElementById("apiEstado").textContent = "API sin conexión";
+      return null;
+    }
+  }
+
+  async function cargarStats() {
+    try {
+      const res  = await fetch(`${API}/api/dashboard/resumen`);
+      const data = await res.json();
+      document.getElementById("sTotal").textContent    = data.total_programas?.toLocaleString() ?? "—";
+      document.getElementById("sDptos").textContent    = data.total_dptos?.toLocaleString() ?? "—";
+      document.getElementById("sDistritos").textContent= data.total_distritos?.toLocaleString() ?? "—";
+      const pct = data.total_programas
+        ? Math.round((data.total_rural / data.total_programas) * 100) : 0;
+      document.getElementById("sRural").textContent = `${pct}%`;
+    } catch {
+      ["sTotal","sDptos","sDistritos","sRural"].forEach(id => {
+        document.getElementById(id).textContent = "—";
+      });
+    }
+  }
+
+  verificarAPI();
+  cargarStats();
+</script>
+</body>
+</html>
