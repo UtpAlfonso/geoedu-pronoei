@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GeoEdu — IA Predicción de Riesgo</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f0f2f5; min-height:100vh; }
+    header { background:#1a3a5c; color:white; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; }
+    header h1 { font-size:18px; font-weight:600; }
+    header nav { display:flex; gap:16px; }
+    header nav a { color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; }
+    header nav a:hover { color:white; }
+    .badge-ia { background:#534AB7; color:white; font-size:11px; padding:3px 10px; border-radius:20px; font-weight:500; margin-left:10px; }
+    .contenido { padding:20px 24px; }
+    .hero-ia { background:linear-gradient(135deg,#534AB7,#7F77DD); color:white; border-radius:12px; padding:20px 24px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+    .hero-ia h2 { font-size:18px; font-weight:600; }
+    .hero-ia p { font-size:13px; opacity:0.85; margin-top:4px; max-width:500px; line-height:1.5; }
+    .btn-entrenar { background:white; color:#534AB7; border:none; padding:10px 20px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:opacity 0.2s; }
+    .btn-entrenar:hover { opacity:0.9; }
+    .btn-entrenar:disabled { opacity:0.5; cursor:not-allowed; }
+    .estado-modelo { display:flex; align-items:center; gap:8px; font-size:13px; color:white; opacity:0.9; margin-top:8px; }
+    .dot-ia { width:9px; height:9px; border-radius:50%; background:#aaa; }
+    .dot-ia.ok  { background:#4CAF50; }
+    .dot-ia.no  { background:#FF5252; }
+    .tarjetas { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+    .tarjeta { background:white; border-radius:10px; padding:14px 18px; border:1px solid #e5e5e5; }
+    .tarjeta .num { font-size:26px; font-weight:700; }
+    .tarjeta .num.critico { color:#C62828; }
+    .tarjeta .num.alto    { color:#E65100; }
+    .tarjeta .num.medio   { color:#F57F17; }
+    .tarjeta .num.bajo    { color:#2E7D32; }
+    .tarjeta .lbl { font-size:12px; color:#888; margin-top:4px; }
+    .grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; }
+    .tabla-wrap { background:white; border-radius:10px; border:1px solid #e5e5e5; overflow:hidden; }
+    .tabla-wrap h3 { font-size:13px; font-weight:600; padding:12px 16px; background:#f8f8f8; border-bottom:1px solid #eee; color:#333; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    thead tr { background:#534AB7; color:white; }
+    thead th { padding:9px 14px; text-align:left; font-weight:500; }
+    tbody tr { border-bottom:1px solid #f5f5f5; transition:background 0.1s; }
+    tbody tr:hover { background:#f5f3ff; }
+    tbody td { padding:9px 14px; color:#333; }
+    .nivel { display:inline-block; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:500; }
+    .nivel.Crítico { background:#fdecea; color:#c62828; }
+    .nivel.Alto    { background:#fff3e0; color:#e65100; }
+    .nivel.Medio   { background:#fff9c4; color:#f57f17; }
+    .nivel.Bajo    { background:#e8f5e9; color:#2e7d32; }
+    .barra-prob { height:8px; border-radius:4px; background:#e0e0e0; margin-top:4px; }
+    .barra-fill { height:8px; border-radius:4px; }
+    .grafico-card { background:white; border-radius:10px; border:1px solid #e5e5e5; padding:16px; }
+    .grafico-card h3 { font-size:13px; font-weight:600; color:#333; margin-bottom:12px; }
+    #loading { text-align:center; padding:30px; color:#999; font-size:13px; }
+    .msg-no-modelo { background:#fdecea; color:#c62828; border-radius:8px; padding:16px; font-size:13px; text-align:center; margin:20px 0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>GeoEdu PRONOEI — IA Predicción de Riesgo <span class="badge-ia">Random Forest</span></h1>
+  <nav>
+    <a href="../../frontend/index.html">Inicio</a>
+    <a href="../../modulo2_brecha/frontend/ranking.html">Brecha</a>
+    <a href="../../modulo3_dashboard/frontend/dashboard.html">Dashboard</a>
+  </nav>
+</header>
+
+<div class="contenido">
+
+  <div class="hero-ia">
+    <div>
+      <h2>Predicción de zonas sin cobertura futura</h2>
+      <p>Modelo de Machine Learning que predice qué distritos tienen mayor probabilidad de quedarse sin programas PRONOEI, basado en patrones de cobertura, ruralidad y variedad de programas.</p>
+      <div class="estado-modelo">
+        <div class="dot-ia" id="dotModelo"></div>
+        <span id="textoEstado">Verificando modelo...</span>
+      </div>
+    </div>
+    <button class="btn-entrenar" id="btnEntrenar" onclick="entrenarModelo()">
+      Entrenar modelo
+    </button>
+  </div>
+
+  <div id="msgNoModelo" class="msg-no-modelo" style="display:none">
+    El modelo aún no está entrenado. Haz clic en <strong>Entrenar modelo</strong> y espera 30 segundos.
+  </div>
+
+  <div id="contenidoPredicciones" style="display:none">
+
+    <div class="tarjetas">
+      <div class="tarjeta"><div class="num critico" id="tCritico">—</div><div class="lbl">Riesgo crítico (≥75%)</div></div>
+      <div class="tarjeta"><div class="num alto"    id="tAlto">—</div><div class="lbl">Riesgo alto (≥50%)</div></div>
+      <div class="tarjeta"><div class="num medio"   id="tMedio">—</div><div class="lbl">Riesgo medio (≥25%)</div></div>
+      <div class="tarjeta"><div class="num bajo"    id="tBajo">—</div><div class="lbl">Riesgo bajo (&lt;25%)</div></div>
+    </div>
+
+    <div class="grid">
+
+      <div class="tabla-wrap">
+        <h3>Top distritos en riesgo — ordenados por probabilidad</h3>
+        <div id="loading">Cargando predicciones...</div>
+        <table id="tablaPredicciones" style="display:none">
+          <thead>
+            <tr><th>#</th><th>Distrito</th><th>Departamento</th><th>Programas</th><th>% Rural</th><th>Probabilidad riesgo</th><th>Nivel</th></tr>
+          </thead>
+          <tbody id="tablaBody"></tbody>
+        </table>
+      </div>
+
+      <div class="grafico-card">
+        <h3>Importancia de variables</h3>
+        <canvas id="chartFeatures" height="280"></canvas>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const API = "https://geoedu-pronoei-api.onrender.com";
+
+  async function verificarEstado() {
+    try {
+      const res  = await fetch(`${API}/api/ia/estado`);
+      const data = await res.json();
+      const dot  = document.getElementById("dotModelo");
+      const txt  = document.getElementById("textoEstado");
+
+      if (data.modelo_entrenado) {
+        dot.className = "dot-ia ok";
+        txt.textContent = "Modelo entrenado y listo";
+        document.getElementById("msgNoModelo").style.display = "none";
+        document.getElementById("contenidoPredicciones").style.display = "block";
+        cargarPredicciones();
+        cargarImportancia();
+      } else {
+        dot.className = "dot-ia no";
+        txt.textContent = "Modelo no entrenado";
+        document.getElementById("msgNoModelo").style.display = "block";
+      }
+    } catch(e) {
+      document.getElementById("textoEstado").textContent = "Error al conectar con la API";
+    }
+  }
+
+  async function entrenarModelo() {
+    const btn = document.getElementById("btnEntrenar");
+    btn.disabled = true;
+    btn.textContent = "Entrenando...";
+    document.getElementById("textoEstado").textContent = "Entrenando modelo, espera 30 segundos...";
+
+    try {
+      await fetch(`${API}/api/ia/entrenar`, { method: "POST" });
+      setTimeout(() => {
+        btn.textContent = "Entrenar modelo";
+        btn.disabled = false;
+        verificarEstado();
+      }, 35000);
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = "Entrenar modelo";
+      alert("Error al iniciar el entrenamiento");
+    }
+  }
+
+  async function cargarPredicciones() {
+    const res  = await fetch(`${API}/api/ia/prediccion?top=50`);
+    const data = await res.json();
+    const lista = data.predicciones;
+
+    const critico = lista.filter(d => d.nivel_riesgo === "Crítico").length;
+    const alto    = lista.filter(d => d.nivel_riesgo === "Alto").length;
+    const medio   = lista.filter(d => d.nivel_riesgo === "Medio").length;
+    const bajo    = lista.filter(d => d.nivel_riesgo === "Bajo").length;
+
+    document.getElementById("tCritico").textContent = critico;
+    document.getElementById("tAlto").textContent    = alto;
+    document.getElementById("tMedio").textContent   = medio;
+    document.getElementById("tBajo").textContent    = bajo;
+
+    const tbody = document.getElementById("tablaBody");
+    tbody.innerHTML = "";
+    lista.forEach((d, i) => {
+      const color = d.prob_riesgo >= 75 ? "#C62828" : d.prob_riesgo >= 50 ? "#E65100" : d.prob_riesgo >= 25 ? "#F57F17" : "#2E7D32";
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="color:#999;font-weight:600">${i+1}</td>
+        <td style="font-weight:600;color:#534AB7">${d.D_DIST}</td>
+        <td>${d.D_DPTO}</td>
+        <td style="font-weight:700">${d.total_programas}</td>
+        <td>${d.pct_rural ?? 0}%</td>
+        <td>
+          <div style="font-weight:700;color:${color}">${d.prob_riesgo}%</div>
+          <div class="barra-prob"><div class="barra-fill" style="width:${d.prob_riesgo}%;background:${color}"></div></div>
+        </td>
+        <td><span class="nivel ${d.nivel_riesgo}">${d.nivel_riesgo}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("tablaPredicciones").style.display = "table";
+  }
+
+  async function cargarImportancia() {
+    const res  = await fetch(`${API}/api/ia/importancia-features`);
+    const data = await res.json();
+    const items = data.importancia;
+
+    new Chart(document.getElementById("chartFeatures"), {
+      type: "bar",
+      data: {
+        labels: items.map(i => i.feature),
+        datasets: [{
+          label: "Importancia (%)",
+          data: items.map(i => i.importancia),
+          backgroundColor: "#534AB7",
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, max: 100 } }
+      }
+    });
+  }
+
+  verificarEstado();
+</script>
+</body>
+</html>

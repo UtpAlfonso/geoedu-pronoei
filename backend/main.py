@@ -8,6 +8,7 @@ from modulo1_mapa.api.routes_mapa    import router as router_mapa
 from modulo2_brecha.api.routes_brecha import router as router_brecha
 from modulo3_dashboard.api.routes_stats import router as router_stats
 from modulo4_alertas.api.routes_alertas  import router as router_alertas
+from modulo5_ia.api.routes_ia import router as router_ia
 
 
 app = FastAPI(
@@ -27,6 +28,7 @@ app.include_router(router_mapa,    prefix="/api/mapa",    tags=["Módulo 1 — M
 app.include_router(router_brecha, prefix="/api/brecha", tags=["Módulo 2 — Brecha"])
 app.include_router(router_stats, prefix="/api/dashboard", tags=["Módulo 3 — Dashboard"])
 app.include_router(router_alertas,  prefix="/api/alertas",   tags=["Módulo 4 — Alertas"])
+app.include_router(router_ia, prefix="/api/ia", tags=["Módulo 5 — IA"])
 
 @app.get("/", tags=["Estado"])
 def home():
