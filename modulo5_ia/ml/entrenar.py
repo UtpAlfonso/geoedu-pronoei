@@ -19,24 +19,35 @@ def cargar_datos():
     """Carga y prepara los datos desde TiDB Cloud."""
     conn = get_connection()
     try:
-        query = """
-            SELECT
-                D_DPTO,
-                D_PROV,
-                D_DIST,
-                DAREACENSO,
-                D_TIPOPROG,
-                COUNT(*)                                                          AS total_programas,
-                SUM(CASE WHEN DAREACENSO = 'Rural' THEN 1 ELSE 0 END)            AS programas_rural,
-                ROUND(
-                    SUM(CASE WHEN DAREACENSO = 'Rural' THEN 1 ELSE 0 END) * 100.0
-                    / COUNT(*), 1
-                )                                                                 AS pct_rural,
-                COUNT(DISTINCT D_TIPOPROG)                                        AS variedad_programas
-            FROM pronoei_programas
-            GROUP BY D_DPTO, D_PROV, D_DIST, DAREACENSO, D_TIPOPROG
-        """
-        df = pd.read_sql(query, conn)
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT
+                    D_DPTO,
+                    D_PROV,
+                    D_DIST,
+                    DAREACENSO,
+                    D_TIPOPROG,
+                    COUNT(*)                                                          AS total_programas,
+                    SUM(CASE WHEN DAREACENSO = 'Rural' THEN 1 ELSE 0 END)            AS programas_rural,
+                    ROUND(
+                        SUM(CASE WHEN DAREACENSO = 'Rural' THEN 1 ELSE 0 END) * 100.0
+                        / COUNT(*), 1
+                    )                                                                 AS pct_rural,
+                    COUNT(DISTINCT D_TIPOPROG)                                        AS variedad_programas
+                FROM pronoei_programas
+                GROUP BY D_DPTO, D_PROV, D_DIST, DAREACENSO, D_TIPOPROG
+            """)
+            rows = cursor.fetchall()
+
+        # Convertir a DataFrame manualmente sin pd.read_sql
+        df = pd.DataFrame(rows)
+
+        # Forzar tipos numéricos
+        df["total_programas"]   = pd.to_numeric(df["total_programas"],   errors="coerce").fillna(0)
+        df["programas_rural"]   = pd.to_numeric(df["programas_rural"],   errors="coerce").fillna(0)
+        df["pct_rural"]         = pd.to_numeric(df["pct_rural"],         errors="coerce").fillna(0)
+        df["variedad_programas"]= pd.to_numeric(df["variedad_programas"],errors="coerce").fillna(0)
+
         return df
     finally:
         conn.close()
