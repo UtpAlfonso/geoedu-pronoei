@@ -66,9 +66,10 @@ def preparar_features(df):
     # 1 = en riesgo (pocos programas y alta ruralidad)
     # 0 = cobertura aceptable
     df["en_riesgo"] = (
-        (df["total_programas"] <= 2) &
-        (df["pct_rural"] >= 60)
-    ).astype(int)
+    (df["total_programas"] <= 3) &
+    (df["pct_rural"] >= 50) &
+    (df["variedad_programas"] <= 1)
+).astype(int)
 
     features = [
         "total_programas",

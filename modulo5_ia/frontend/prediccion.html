@@ -110,7 +110,7 @@
 
       <div class="grafico-card">
         <h3>Importancia de variables</h3>
-        <canvas id="chartFeatures" height="280"></canvas>
+        <canvas id="chartFeatures" style="max-height:340px"></canvas>
       </div>
 
     </div>
@@ -223,6 +223,7 @@
       options: {
         indexAxis: "y",
         responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: { x: { beginAtZero: true, max: 100 } }
       }
