@@ -1,7 +1,9 @@
 import os
 import joblib
 import numpy as np
+import pandas as pd
 import sys
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from config.db import get_connection
@@ -9,13 +11,16 @@ from config.db import get_connection
 MODELO_PATH   = os.path.join(os.path.dirname(__file__), "modelo_rf.pkl")
 ENCODERS_PATH = os.path.join(os.path.dirname(__file__), "encoders.pkl")
 
+
 def modelo_existe():
     return os.path.exists(MODELO_PATH) and os.path.exists(ENCODERS_PATH)
 
+
 def cargar_modelo():
-    modelo   = joblib.load(MODELO_PATH)
+    modelo = joblib.load(MODELO_PATH)
     encoders = joblib.load(ENCODERS_PATH)
     return modelo, encoders
+
 
 def predecir_distritos(top: int = 20):
     """
@@ -36,13 +41,13 @@ def predecir_distritos(top: int = 20):
                     D_PROV,
                     D_DIST,
                     DAREACENSO,
-                    COUNT(*)                                                AS total_programas,
+                    COUNT(*) AS total_programas,
                     SUM(CASE WHEN DAREACENSO = 'Rural' THEN 1 ELSE 0 END) AS programas_rural,
                     ROUND(
                         SUM(CASE WHEN DAREACENSO = 'Rural' THEN 1 ELSE 0 END)
                         * 100.0 / COUNT(*), 1
-                    )                                                       AS pct_rural,
-                    COUNT(DISTINCT D_TIPOPROG)                              AS variedad_programas
+                    ) AS pct_rural,
+                    COUNT(DISTINCT D_TIPOPROG) AS variedad_programas
                 FROM pronoei_programas
                 GROUP BY D_DPTO, D_PROV, D_DIST, DAREACENSO
                 ORDER BY total_programas ASC
@@ -51,38 +56,53 @@ def predecir_distritos(top: int = 20):
     finally:
         conn.close()
 
-    resultados = []
+    data_modelo = []
+    filas_validas = []
+
     for row in rows:
         try:
             dpto_enc = encoders["D_DPTO"].transform([row["D_DPTO"]])[0]
             area_enc = encoders["DAREACENSO"].transform([row["DAREACENSO"]])[0]
+
+            data_modelo.append({
+                "total_programas": row["total_programas"],
+                "programas_rural": row["programas_rural"],
+                "pct_rural": row["pct_rural"] or 0,
+                "variedad_programas": row["variedad_programas"],
+                "D_DPTO_enc": dpto_enc,
+                "DAREACENSO_enc": area_enc
+            })
+
+            filas_validas.append(row)
+
         except Exception:
             continue
 
-        features = np.array([[
-            row["total_programas"],
-            row["programas_rural"],
-            row["pct_rural"] or 0,
-            row["variedad_programas"],
-            dpto_enc,
-            area_enc,
-        ]])
+    if not data_modelo:
+        return []
 
-        prob_riesgo = modelo.predict_proba(features)[0][1]
+    # DataFrame con nombres correctos para evitar warnings
+    X = pd.DataFrame(data_modelo)
 
+    # Predicción en lote
+    probabilidades = modelo.predict_proba(X)[:, 1]
+
+    resultados = []
+    for row, prob_riesgo in zip(filas_validas, probabilidades):
         resultados.append({
-            "D_DPTO":           row["D_DPTO"],
-            "D_PROV":           row["D_PROV"],
-            "D_DIST":           row["D_DIST"],
-            "DAREACENSO":       row["DAREACENSO"],
-            "total_programas":  row["total_programas"],
-            "pct_rural":        row["pct_rural"],
-            "prob_riesgo":      round(float(prob_riesgo) * 100, 1),
-            "nivel_riesgo":     clasificar_riesgo(prob_riesgo),
+            "D_DPTO": row["D_DPTO"],
+            "D_PROV": row["D_PROV"],
+            "D_DIST": row["D_DIST"],
+            "DAREACENSO": row["DAREACENSO"],
+            "total_programas": row["total_programas"],
+            "pct_rural": row["pct_rural"],
+            "prob_riesgo": round(float(prob_riesgo) * 100, 1),
+            "nivel_riesgo": clasificar_riesgo(prob_riesgo),
         })
 
     resultados.sort(key=lambda x: x["prob_riesgo"], reverse=True)
     return resultados[:top]
+
 
 def clasificar_riesgo(prob: float) -> str:
     if prob >= 0.75:
@@ -94,12 +114,16 @@ def clasificar_riesgo(prob: float) -> str:
     else:
         return "Bajo"
 
+
 def get_importancia_features():
-    """Retorna la importancia de cada variable del modelo."""
+    """
+    Retorna la importancia de cada variable del modelo.
+    """
     if not modelo_existe():
         return {"error": "Modelo no entrenado."}
 
     modelo, _ = cargar_modelo()
+
     nombres = [
         "Total programas",
         "Programas rurales",
@@ -108,7 +132,9 @@ def get_importancia_features():
         "Departamento",
         "Área",
     ]
+
     importancias = modelo.feature_importances_
+
     return [
         {"feature": n, "importancia": round(float(i) * 100, 1)}
         for n, i in sorted(
