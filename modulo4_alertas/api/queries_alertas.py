@@ -50,7 +50,7 @@ def get_resumen_alertas():
                 FROM pronoei_programas
                 WHERE
                     FECHAREG IS NOT NULL
-                    AND STR_TO_DATE(FECHAREG, '%%d/%%m/%%Y') < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+                    AND STR_TO_DATE(FECHAREG, '%d/%m/%Y') < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
                 GROUP BY D_DPTO, D_DREUGEL
                 ORDER BY programas_inactivos DESC
             """)
@@ -71,7 +71,7 @@ def get_conteo_alertas():
                 FROM pronoei_programas
                 WHERE
                     FECHAREG IS NOT NULL
-                    AND STR_TO_DATE(FECHAREG, '%%d/%%m/%%Y') < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+                    AND STR_TO_DATE(FECHAREG, '%d/%m/%Y') < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
             """)
             return cursor.fetchone()
     finally:
