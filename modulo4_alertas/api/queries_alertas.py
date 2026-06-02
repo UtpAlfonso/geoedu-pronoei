@@ -5,14 +5,10 @@ from config.db import get_connection
 
 
 def get_programas_inactivos(meses: int = 6):
-    """
-    Usa FECHAREG como fecha base porque FECHA_ACT
-    tiene el mismo valor para todos los registros.
-    """
     conn = get_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute("""
+            sql = """
                 SELECT
                     COD_MOD,
                     CEN_EDU,
@@ -22,32 +18,27 @@ def get_programas_inactivos(meses: int = 6):
                     D_PROV,
                     D_DIST,
                     D_DREUGEL,
-                    TRIM(TRAILING '\\r' FROM FECHA_ACT)  AS FECHA_ACT,
-                    TRIM(TRAILING '\\r' FROM FECHAREG)   AS FECHAREG,
-                    DATEDIFF(
-                        CURDATE(),
-                        STR_TO_DATE(
-                            TRIM(TRAILING '\\r' FROM FECHAREG),
-                            CASE
-                                WHEN TRIM(TRAILING '\\r' FROM FECHAREG) LIKE '%%/%%/%%%%'
-                                THEN '%%d/%%m/%%Y'
-                                ELSE '%%Y-%%m-%%d'
-                            END
-                        )
+                    FECHA_ACT,
+                    FECHAREG,
+                    DATEDIFF(CURDATE(),
+                        STR_TO_DATE(FECHAREG, '%d/%m/%Y')
                     ) AS dias_sin_actualizar
                 FROM pronoei_programas
-                WHERE FECHAREG IS NOT NULL
-                  AND TRIM(TRAILING '\\r' FROM FECHAREG) != ''
+                WHERE
+                    FECHAREG IS NOT NULL
+                    AND FECHAREG != ''
+                    AND STR_TO_DATE(FECHAREG, '%d/%m/%Y') IS NOT NULL
+                    AND STR_TO_DATE(FECHAREG, '%d/%m/%Y') < DATE_SUB(CURDATE(), INTERVAL %s MONTH)
                 ORDER BY dias_sin_actualizar DESC
                 LIMIT 500
-            """)
+            """
+            cursor.execute(sql, (meses,))
             return cursor.fetchall()
     finally:
         conn.close()
 
 
 def get_resumen_alertas():
-    """Resumen por UGEL usando FECHAREG."""
     conn = get_connection()
     try:
         with conn.cursor() as cursor:
@@ -57,10 +48,9 @@ def get_resumen_alertas():
                     D_DREUGEL,
                     COUNT(*) AS programas_inactivos
                 FROM pronoei_programas
-                WHERE STR_TO_DATE(
-                        TRIM(TRAILING '\\r' FROM FECHAREG),
-                        '%%d/%%m/%%Y'
-                      ) < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+                WHERE
+                    FECHAREG IS NOT NULL
+                    AND STR_TO_DATE(FECHAREG, '%d/%m/%Y') < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
                 GROUP BY D_DPTO, D_DREUGEL
                 ORDER BY programas_inactivos DESC
             """)
@@ -68,8 +58,8 @@ def get_resumen_alertas():
     finally:
         conn.close()
 
+
 def get_conteo_alertas():
-    """Conteo usando FECHAREG."""
     conn = get_connection()
     try:
         with conn.cursor() as cursor:
@@ -79,10 +69,9 @@ def get_conteo_alertas():
                     SUM(CASE WHEN DAREACENSO = 'Rural'  THEN 1 ELSE 0 END) AS rural_inactivos,
                     SUM(CASE WHEN DAREACENSO = 'Urbana' THEN 1 ELSE 0 END) AS urbana_inactivos
                 FROM pronoei_programas
-                WHERE STR_TO_DATE(
-                        TRIM(TRAILING '\\r' FROM FECHAREG),
-                        '%%d/%%m/%%Y'
-                      ) < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+                WHERE
+                    FECHAREG IS NOT NULL
+                    AND STR_TO_DATE(FECHAREG, '%d/%m/%Y') < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
             """)
             return cursor.fetchone()
     finally:
