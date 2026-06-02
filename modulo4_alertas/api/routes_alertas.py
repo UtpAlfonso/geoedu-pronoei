@@ -9,9 +9,23 @@ router = APIRouter()
 
 
 @router.get("/inactivos")
-def listar_inactivos(
-    meses: int = Query(6, ge=1, le=36, description="Meses sin actualizar. Por defecto 6."),
-):
+def listar_inactivos(meses: int = Query(6, ge=1, le=36)):
+    try:
+        data = get_programas_inactivos(meses=meses)
+
+        return {
+            "meses_umbral": meses,
+            "total": len(data),
+            "programas": data
+        }
+
+    except Exception as e:
+        import traceback
+
+        return {
+            "error": str(e),
+            "trace": traceback.format_exc()
+        }
     """
     Lista programas que no han sido actualizados en más de N meses.
     Máximo 500 resultados, ordenados por más antiguos primero.

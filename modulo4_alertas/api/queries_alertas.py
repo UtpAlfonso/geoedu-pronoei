@@ -28,7 +28,7 @@ def get_programas_inactivos(meses: int = 6):
                     FECHAREG IS NOT NULL
                     AND FECHAREG != ''
                     AND STR_TO_DATE(FECHAREG, '%d/%m/%Y') IS NOT NULL
-                    AND STR_TO_DATE(FECHAREG, '%d/%m/%Y') < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+                    AND STR_TO_DATE(FECHAREG, '%d/%m/%Y') < DATE_SUB(CURDATE(), INTERVAL %s MONTH)
                 ORDER BY dias_sin_actualizar DESC
                 LIMIT 500
             """
