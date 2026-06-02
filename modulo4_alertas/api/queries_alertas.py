@@ -6,8 +6,8 @@ from config.db import get_connection
 
 def get_programas_inactivos(meses: int = 6):
     """
-    Retorna programas cuya FECHA_ACT tiene más de N meses sin actualizarse.
-    Usa STR_TO_DATE porque la fecha viene como texto 'dd/mm/yyyy'.
+    Usa FECHAREG como fecha base porque FECHA_ACT
+    tiene el mismo valor para todos los registros.
     """
     conn = get_connection()
     try:
@@ -22,28 +22,32 @@ def get_programas_inactivos(meses: int = 6):
                     D_PROV,
                     D_DIST,
                     D_DREUGEL,
-                    TRIM(TRAILING '\\r' FROM FECHA_ACT)   AS FECHA_ACT,
-                    TRIM(TRAILING '\\r' FROM FECHAREG)    AS FECHAREG,
+                    TRIM(TRAILING '\\r' FROM FECHA_ACT)  AS FECHA_ACT,
+                    TRIM(TRAILING '\\r' FROM FECHAREG)   AS FECHAREG,
                     DATEDIFF(
                         CURDATE(),
-                        STR_TO_DATE(TRIM(TRAILING '\\r' FROM FECHA_ACT), '%%d/%%m/%%Y')
+                        STR_TO_DATE(
+                            TRIM(TRAILING '\\r' FROM FECHAREG),
+                            CASE
+                                WHEN TRIM(TRAILING '\\r' FROM FECHAREG) LIKE '%%/%%/%%%%'
+                                THEN '%%d/%%m/%%Y'
+                                ELSE '%%Y-%%m-%%d'
+                            END
+                        )
                     ) AS dias_sin_actualizar
                 FROM pronoei_programas
-                WHERE STR_TO_DATE(TRIM(TRAILING '\\r' FROM FECHA_ACT), '%%d/%%m/%%Y')
-                      < DATE_SUB(CURDATE(), INTERVAL %s MONTH)
+                WHERE FECHAREG IS NOT NULL
+                  AND TRIM(TRAILING '\\r' FROM FECHAREG) != ''
                 ORDER BY dias_sin_actualizar DESC
                 LIMIT 500
-            """, (meses,))
+            """)
             return cursor.fetchall()
     finally:
         conn.close()
 
 
 def get_resumen_alertas():
-    """
-    Resumen de alertas agrupado por departamento.
-    Muestra cuántos programas de cada dpto no se han actualizado en más de 6 meses.
-    """
+    """Resumen por UGEL usando FECHAREG."""
     conn = get_connection()
     try:
         with conn.cursor() as cursor:
@@ -53,8 +57,10 @@ def get_resumen_alertas():
                     D_DREUGEL,
                     COUNT(*) AS programas_inactivos
                 FROM pronoei_programas
-                WHERE STR_TO_DATE(TRIM(TRAILING '\\r' FROM FECHA_ACT), '%%d/%%m/%%Y')
-                      < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+                WHERE STR_TO_DATE(
+                        TRIM(TRAILING '\\r' FROM FECHAREG),
+                        '%%d/%%m/%%Y'
+                      ) < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
                 GROUP BY D_DPTO, D_DREUGEL
                 ORDER BY programas_inactivos DESC
             """)
@@ -62,9 +68,8 @@ def get_resumen_alertas():
     finally:
         conn.close()
 
-
 def get_conteo_alertas():
-    """Conteo rápido de cuántos programas tienen más de 6 meses sin actualizar."""
+    """Conteo usando FECHAREG."""
     conn = get_connection()
     try:
         with conn.cursor() as cursor:
@@ -74,8 +79,10 @@ def get_conteo_alertas():
                     SUM(CASE WHEN DAREACENSO = 'Rural'  THEN 1 ELSE 0 END) AS rural_inactivos,
                     SUM(CASE WHEN DAREACENSO = 'Urbana' THEN 1 ELSE 0 END) AS urbana_inactivos
                 FROM pronoei_programas
-                WHERE STR_TO_DATE(TRIM(TRAILING '\\r' FROM FECHA_ACT), '%%d/%%m/%%Y')
-                      < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+                WHERE STR_TO_DATE(
+                        TRIM(TRAILING '\\r' FROM FECHAREG),
+                        '%%d/%%m/%%Y'
+                      ) < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
             """)
             return cursor.fetchone()
     finally:
