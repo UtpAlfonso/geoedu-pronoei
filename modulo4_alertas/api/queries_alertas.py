@@ -21,14 +21,14 @@ def get_programas_inactivos(meses: int = 6):
                     FECHA_ACT,
                     FECHAREG,
                     DATEDIFF(CURDATE(),
-                        STR_TO_DATE(FECHAREG, '%d/%m/%Y')
+                        STR_TO_DATE(FECHAREG, '%%d/%%m/%%Y')
                     ) AS dias_sin_actualizar
                 FROM pronoei_programas
                 WHERE
                     FECHAREG IS NOT NULL
                     AND FECHAREG != ''
-                    AND STR_TO_DATE(FECHAREG, '%d/%m/%Y') IS NOT NULL
-                    AND STR_TO_DATE(FECHAREG, '%d/%m/%Y') < DATE_SUB(CURDATE(), INTERVAL %s MONTH)
+                    AND STR_TO_DATE(FECHAREG, '%%d/%%m/%%Y') IS NOT NULL
+                    AND STR_TO_DATE(FECHAREG, '%%d/%%m/%%Y') < DATE_SUB(CURDATE(), INTERVAL %s MONTH)
                 ORDER BY dias_sin_actualizar DESC
                 LIMIT 500
             """
@@ -50,7 +50,7 @@ def get_resumen_alertas():
                 FROM pronoei_programas
                 WHERE
                     FECHAREG IS NOT NULL
-                    AND STR_TO_DATE(FECHAREG, '%d/%m/%Y') < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+                    AND STR_TO_DATE(FECHAREG, '%%d/%%m/%%Y') < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
                 GROUP BY D_DPTO, D_DREUGEL
                 ORDER BY programas_inactivos DESC
             """)
@@ -71,7 +71,7 @@ def get_conteo_alertas():
                 FROM pronoei_programas
                 WHERE
                     FECHAREG IS NOT NULL
-                    AND STR_TO_DATE(FECHAREG, '%d/%m/%Y') < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+                    AND STR_TO_DATE(FECHAREG, '%%d/%%m/%%Y') < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
             """)
             return cursor.fetchone()
     finally:
