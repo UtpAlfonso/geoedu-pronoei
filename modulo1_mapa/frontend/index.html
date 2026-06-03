@@ -116,17 +116,6 @@
 <script>
   const API = "https://geoedu-pronoei-api.onrender.com";
 
-    fetch(API + "/api/ping", { signal: AbortSignal.timeout(4000) })
-    .then(r => r.json())
-    .then(() => {
-      document.getElementById("navDotApi").style.background = "#4CAF50";
-      document.getElementById("navApiEstado").textContent   = "API conectada";
-    })
-    .catch(() => {
-      document.getElementById("navDotApi").style.background = "#F44336";
-      document.getElementById("navApiEstado").textContent   = "API sin conexión";
-    });
-
   const COORDS_DPTO = {
     "AMAZONAS":[-5.5,-78.0],"ANCASH":[-9.5,-77.5],"APURIMAC":[-14.0,-73.0],
     "AREQUIPA":[-16.4,-71.5],"AYACUCHO":[-13.2,-74.2],"CAJAMARCA":[-6.8,-78.5],
@@ -301,6 +290,17 @@
   function mostrarLoading(show) {
     document.getElementById("loading").style.display = show ? "block" : "none";
   }
+
+  fetch(API + "/api/ping", { signal: AbortSignal.timeout(4000) })
+    .then(r => r.json())
+    .then(() => {
+      document.getElementById("navDotApi").style.background = "#4CAF50";
+      document.getElementById("navApiEstado").textContent   = "API conectada";
+    })
+    .catch(() => {
+      document.getElementById("navDotApi").style.background = "#F44336";
+      document.getElementById("navApiEstado").textContent   = "API sin conexión";
+    });
 
   cargarDepartamentos();
   cargarProgramas();
