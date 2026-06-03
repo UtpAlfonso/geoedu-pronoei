@@ -27,32 +27,57 @@
     nav a:hover { color: white !important; background: rgba(255,255,255,0.05); }
     nav a.active { color: white !important; border-bottom: 2px solid var(--accent-blue) !important; background: rgba(255,255,255,0.1); }
 
-    /* HERO SECTION (Diseño igual a la foto) */
-    .hero {
-      background: linear-gradient(135deg, #1A3A5C 0%, #244a77 100%);
-      color: white;
-      padding: 60px 40px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: relative;
-      overflow: hidden;
-    }
-    .hero-content { max-width: 650px; z-index: 2; }
-    .hero h1 { font-size: 36px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.02em; }
-    .hero h2 { font-size: 18px; font-weight: 500; opacity: 0.9; margin-bottom: 24px; line-height: 1.4; }
-    .hero p { font-size: 14px; opacity: 0.7; margin-bottom: 35px; line-height: 1.6; }
+/* HERO SECTION (Diseño igual a la foto) */
+.hero {
+  background: linear-gradient(135deg, #1A3A5C 0%, #244a77 100%);
+  color: white;
+  padding: 60px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
 
-    .hero-stats { display: flex; gap: 16px; flex-wrap: wrap; }
-    .stat-card {
-      background: white; color: var(--text-main); padding: 20px; border-radius: 14px;
-      min-width: 155px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    }
-    .stat-card .val { font-size: 26px; font-weight: 800; display: block; color: var(--primary-dark); }
-    .stat-card .lbl { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-top: 4px; }
-    .stat-card .trend { font-size: 10px; color: #10b981; font-weight: 700; }
+.hero-content { 
+  max-width: 650px; 
+  z-index: 2; 
+}
 
-    .hero-map { width: 350px; filter: brightness(0) invert(1); opacity: 0.15; position: absolute; right: 40px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.hero h1 { font-size: 36px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.02em; }
+.hero h2 { font-size: 18px; font-weight: 500; opacity: 0.9; margin-bottom: 24px; line-height: 1.4; }
+.hero p { font-size: 14px; opacity: 0.7; margin-bottom: 35px; line-height: 1.6; }
+
+.hero-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+
+.stat-card {
+  background: white; 
+  color: var(--text-main); 
+  padding: 20px; 
+  border-radius: 14px;
+  min-width: 155px; 
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.stat-card .val { font-size: 26px; font-weight: 800; display: block; color: var(--primary-dark); }
+.stat-card .lbl { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-top: 4px; }
+.stat-card .trend { font-size: 10px; color: #10b981; font-weight: 700; }
+
+/* MAPA CORREGIDO Y CON LÍNEAS DE PRUEBA */
+.hero-map { 
+  width: 450px;           /* Aumentado para que se vea mejor */
+  position: absolute; 
+  right: 40px; 
+  top: 50%; 
+  transform: translateY(-50%); 
+  pointer-events: none; 
+  z-index: 5;             /* Asegura que esté por encima del fondo */
+
+  /* CORRECCIÓN: Quitamos los filtros que lo hacían invisible */
+  filter: none !important; 
+  opacity: 1 !important;   
+
+}
 
     /* FEATURES BAR */
     .features-bar {
@@ -182,7 +207,7 @@
       </div>
     </div>
   </div>
-  <img src="./images/mapa del perú.png" class="hero-map">
+  <img src="./images/mapa.png" class="hero-map">
 </div>
 
 <section class="features-bar">
@@ -235,7 +260,7 @@
 
 <footer>
     <div style="display:flex; align-items:center; gap:20px;">
-        <img src="./images/ministerio de educacion.png" alt="Perú" height="30">
+        <img src="./images/ministerio_de_educacion.png" alt="Perú" height="100%" width="200">
         <div style="font-size:12px; opacity:0.8;">Ministerio de Educación del Perú</div>
     </div>
     <div style="text-align:right; font-size:11px; opacity:0.6;">© 2026 GeoEdu PRONOEI. Datos Dinámicos API.</div>
