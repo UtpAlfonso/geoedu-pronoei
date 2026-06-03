@@ -169,7 +169,34 @@
 .footer-links a:hover { color: #3b82f6; padding-left: 5px; }
 
 .tech-info p { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; color: #94a3b8; }
+.footer-links li a {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Espacio entre icono y texto */
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.3s ease;
+    padding: 4px 0;
+}
 
+.link-icon {
+    width: 16px;
+    height: 16px;
+    color: #3b82f6; /* Color azul para que resalten los iconos */
+    transition: transform 0.3s ease;
+}
+
+/* Efecto al pasar el mouse */
+.footer-links li a:hover {
+    color: #ffffff;
+    transform: translateX(5px); /* Desplazamiento sutil a la derecha */
+}
+
+.footer-links li a:hover .link-icon {
+    color: #60a5fa; /* El icono brilla un poco más */
+    transform: scale(1.2); /* El icono crece ligeramente */
+}
 /* Barra inferior */
 .footer-bottom {
     max-width: 1200px;
@@ -344,16 +371,43 @@
             </div>
         </div>
 
-        <!-- Columna 2: Enlaces Rápidos -->
-        <div class="footer-col">
-            <h4>Plataforma</h4>
-            <ul class="footer-links">
-                <li><a href="/modulo1_mapa/frontend/index.html">Visor Geográfico</a></li>
-                <li><a href="/modulo2_brecha/frontend/ranking.html">Análisis de Brecha</a></li>
-                <li><a href="/modulo3_dashboard/frontend/dashboard.html">Estadísticas Nacionales</a></li>
-                <li><a href="/modulo4_alertas/frontend/alertas.html">Centro de Alertas</a></li>
-            </ul>
-        </div>
+       <!-- Columna 2: Enlaces Rápidos con Iconos -->
+<div class="footer-col">
+    <h4>Plataforma</h4>
+    <ul class="footer-links">
+        <li>
+            <a href="/modulo1_mapa/frontend/index.html">
+                <i data-lucide="map" class="link-icon"></i>
+                <span>Visor Geográfico</span>
+            </a>
+        </li>
+        <li>
+            <a href="/modulo2_brecha/frontend/ranking.html">
+                <i data-lucide="layers" class="link-icon"></i>
+                <span>Análisis de Brecha</span>
+            </a>
+        </li>
+        <li>
+            <a href="/modulo3_dashboard/frontend/dashboard.html">
+                <i data-lucide="pie-chart" class="link-icon"></i>
+                <span>Estadísticas Nacionales</span>
+            </a>
+        </li>
+        <li>
+            <a href="/modulo4_alertas/frontend/alertas.html">
+                <i data-lucide="bell" class="link-icon"></i>
+                <span>Centro de Alertas</span>
+            </a>
+        </li>
+        <!-- Agregamos el Módulo 5 para completar la suite -->
+        <li>
+            <a href="/modulo5_ia/frontend/prediccion.html">
+                <i data-lucide="brain-circuit" class="link-icon"></i>
+                <span>IA Predicción</span>
+            </a>
+        </li>
+    </ul>
+</div>
 
         <!-- Columna 3: Información Técnica -->
         <div class="footer-col">
