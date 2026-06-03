@@ -46,9 +46,43 @@
   </style>
 </head>
 <body>
-<header>
-  <h1>GeoEdu PRONOEI — Índice de Brecha por Distrito</h1>
-  <a href="../../modulo1_mapa/frontend/index.html">← Volver al Mapa</a>
+<header style="background:#1A3A5C;color:white;padding:0;display:flex;flex-direction:column;">
+ 
+  <!-- Fila superior -->
+  <div style="padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.1);">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a href="/frontend/index.html" style="color:white;text-decoration:none;font-size:18px;font-weight:700;">GeoEdu PRONOEI</a>
+      <span style="color:#B0C4DE;font-size:13px;border-left:1px solid rgba(255,255,255,0.2);padding-left:16px;letter-spacing:0.05em;">
+        Módulo 4 — Alertas de programas inactivos
+      </span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#B0C4DE;margin-left:24px;flex-shrink:0;">
+      <div id="navDotApi" style="width:8px;height:8px;border-radius:50%;background:#aaa;flex-shrink:0;"></div>
+      <span id="navApiEstado">Verificando...</span>
+    </div>
+</div>
+ 
+  <!-- Navegación -->
+  <nav style="padding:0 24px;display:flex;gap:0;overflow-x:auto;">
+    <a style="padding:10px 16px;color:rgba(255,255,255,0.7);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;border-bottom:2px solid transparent;white-space:nowrap;"
+       href="/frontend/index.html">🏠 Inicio</a>
+ 
+    <a style="padding:10px 16px;color:rgba(255,255,255,0.7);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;border-bottom:2px solid transparent;white-space:nowrap;"
+       href="/modulo1_mapa/frontend/index.html">🗺️ Mapa</a>
+ 
+    <a style="padding:10px 16px;color:rgba(255,255,255,0.7);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;border-bottom:2px solid transparent;white-space:nowrap;"
+       href="/modulo2_brecha/frontend/ranking.html">📊 Brecha</a>
+ 
+    <a style="padding:10px 16px;color:rgba(255,255,255,0.7);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;border-bottom:2px solid transparent;white-space:nowrap;"
+       href="/modulo3_dashboard/frontend/dashboard.html">📈 Dashboard</a>
+ 
+    <a style="padding:10px 16px;color:rgba(255,255,255,0.7);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;border-bottom:2px solid transparent;white-space:nowrap;"
+       href="/modulo4_alertas/frontend/alertas.html">🔔 Alertas</a>
+ 
+    <a style="padding:10px 16px;color:rgba(255,255,255,0.7);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;border-bottom:2px solid transparent;white-space:nowrap;"
+       href="/modulo5_ia/frontend/prediccion.html">🤖 IA Predicción</a>
+  </nav>
+ 
 </header>
 <div class="controles">
   <label>Mostrar top</label>
@@ -89,6 +123,17 @@
   const API = "https://geoedu-pronoei-api.onrender.com";
   let datosRanking = [];
 
+    fetch(API + "/api/ping", { signal: AbortSignal.timeout(4000) })
+    .then(r => r.json())
+    .then(() => {
+      document.getElementById("navDotApi").style.background = "#4CAF50";
+      document.getElementById("navApiEstado").textContent   = "API conectada";
+    })
+    .catch(() => {
+      document.getElementById("navDotApi").style.background = "#F44336";
+      document.getElementById("navApiEstado").textContent   = "API sin conexión";
+    });
+  
   function nivelBrecha(total) {
     if (total <= 1) return { label:"Crítico", clase:"critico" };
     if (total <= 3) return { label:"Alto",    clase:"alto" };
