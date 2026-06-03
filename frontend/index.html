@@ -128,7 +128,76 @@
     .step h5 { font-size: 14px; font-weight: 700; margin-bottom: 5px; }
     .step p { font-size: 12px; color: var(--text-muted); }
 
-    footer { background: var(--primary-dark); color: white; padding: 40px; display: flex; justify-content: space-between; align-items: center; }
+    .main-footer {
+    background: #0f172a; /* Azul ultra oscuro para contraste */
+    color: #f1f5f9;
+    padding: 60px 40px 20px 40px;
+    border-top: 4px solid #3b82f6; /* Línea de acento azul */
+    font-family: 'Inter', sans-serif;
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: 50px;
+    margin-bottom: 50px;
+}
+
+.footer-col h3 { font-size: 18px; margin-bottom: 10px; color: white; }
+.footer-col h4 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 20px; }
+.footer-col p { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+
+.footer-brand { display: flex; gap: 15px; align-items: flex-start; margin-bottom: 20px; }
+.brand-icon { color: #3b82f6; width: 32px; height: 32px; }
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    background: rgba(255,255,255,0.05);
+    padding: 8px 12px;
+    border-radius: 8px;
+    width: fit-content;
+}
+
+.footer-links { list-style: none; }
+.footer-links li { margin-bottom: 12px; }
+.footer-links a { color: #94a3b8; text-decoration: none; font-size: 13px; transition: 0.3s; }
+.footer-links a:hover { color: #3b82f6; padding-left: 5px; }
+
+.tech-info p { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; color: #94a3b8; }
+
+/* Barra inferior */
+.footer-bottom {
+    max-width: 1200px;
+    margin: 0 auto;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.logos-institucionales { display: flex; align-items: center; gap: 20px; }
+.logos-institucionales img { height: 45px; width: auto; object-fit: contain; }
+.peru-logo { height: 35px !important; }
+.divider { width: 1px; height: 30px; background: rgba(255,255,255,0.2); }
+
+.copyright-area { text-align: right; }
+.copyright-area p { font-size: 11px; color: #64748b; margin: 0; }
+.tagline { font-weight: 600; color: #3b82f6 !important; margin-top: 4px !important; }
+
+/* Responsive */
+@media (max-width: 850px) {
+    .footer-container { grid-template-columns: 1fr; gap: 30px; }
+    .footer-bottom { flex-direction: column; text-align: center; }
+    .copyright-area { text-align: center; }
+}
 
     @media (max-width: 1000px) {
       .hero { flex-direction: column; text-align: center; }
@@ -258,12 +327,57 @@
     </div>
 </section>
 
-<footer>
-    <div style="display:flex; align-items:center; gap:20px;">
-        <img src="./images/ministerio_de_educacion.png" alt="Perú" height="100%" width="200">
-        <div style="font-size:12px; opacity:0.8;">Ministerio de Educación del Perú</div>
+<footer class="main-footer">
+    <div class="footer-container">
+        <!-- Columna 1: Identidad -->
+        <div class="footer-col">
+            <div class="footer-brand">
+                <i data-lucide="layout-grid" class="brand-icon"></i>
+                <div>
+                    <h3>GeoEdu PRONOEI</h3>
+                    <p>Sistema Inteligente de Monitoreo Georreferenciado para la Educación Inicial No Escolarizada.</p>
+                </div>
+            </div>
+            <div class="status-indicator">
+                <div class="dot online"></div>
+                <span>Sincronizado con base de datos MINEDU</span>
+            </div>
+        </div>
+
+        <!-- Columna 2: Enlaces Rápidos -->
+        <div class="footer-col">
+            <h4>Plataforma</h4>
+            <ul class="footer-links">
+                <li><a href="/modulo1_mapa/frontend/index.html">Visor Geográfico</a></li>
+                <li><a href="/modulo2_brecha/frontend/ranking.html">Análisis de Brecha</a></li>
+                <li><a href="/modulo3_dashboard/frontend/dashboard.html">Estadísticas Nacionales</a></li>
+                <li><a href="/modulo4_alertas/frontend/alertas.html">Centro de Alertas</a></li>
+            </ul>
+        </div>
+
+        <!-- Columna 3: Información Técnica -->
+        <div class="footer-col">
+            <h4>Soporte Técnico</h4>
+            <div class="tech-info">
+                <p><i data-lucide="terminal" size="14"></i> Stack: FastAPI + MariaDB</p>
+                <p><i data-lucide="shield-check" size="14"></i> Versión: 1.2.0 (Estable)</p>
+                <p><i data-lucide="mail" size="14"></i> soporte.geoedu@minedu.gob.pe</p>
+            </div>
+        </div>
     </div>
-    <div style="text-align:right; font-size:11px; opacity:0.6;">© 2026 GeoEdu PRONOEI. Datos Dinámicos API.</div>
+
+    <!-- Barra Inferior Institucional -->
+    <div class="footer-bottom">
+        <div class="logos-institucionales">
+            <img src="./images/ministerio_de_educacion.png" alt="Minedu Logo">
+            <div class="divider"></div>
+            <img src="./images/gobperu.svg" alt="Peru Logo" class="peru-logo">
+        </div>
+        <div class="copyright-area">
+            <p>© 2026 Ministerio de Educación del Perú. Todos los derechos reservados.</p>
+            <p class="tagline">Trabajando por una educación inclusiva y georreferenciada.</p>
+        </div>
+    </div>
 </footer>
 
 <script>
