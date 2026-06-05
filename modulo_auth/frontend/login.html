@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GeoEdu PRONOEI — Iniciar sesión</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:linear-gradient(135deg,#1A3A5C 0%,#2E7D9E 100%); min-height:100vh; display:flex; align-items:center; justify-content:center; }
+    .card { background:white; border-radius:16px; padding:40px; width:100%; max-width:420px; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+    .logo { text-align:center; margin-bottom:28px; }
+    .logo h1 { font-size:24px; font-weight:700; color:#1A3A5C; }
+    .logo p  { font-size:13px; color:#888; margin-top:4px; }
+    .form-group { margin-bottom:16px; }
+    .form-group label { display:block; font-size:13px; font-weight:500; color:#444; margin-bottom:6px; }
+    .form-group input { width:100%; padding:11px 14px; border:1.5px solid #ddd; border-radius:8px; font-size:14px; transition:border 0.2s; outline:none; }
+    .form-group input:focus { border-color:#1A3A5C; }
+    .btn { width:100%; padding:12px; background:#1A3A5C; color:white; border:none; border-radius:8px; font-size:15px; font-weight:600; cursor:pointer; margin-top:6px; transition:background 0.2s; }
+    .btn:hover { background:#254f7a; }
+    .btn:disabled { background:#aaa; cursor:not-allowed; }
+    .links { display:flex; justify-content:space-between; margin-top:16px; font-size:13px; }
+    .links a { color:#1A3A5C; text-decoration:none; }
+    .links a:hover { text-decoration:underline; }
+    .msg { padding:10px 14px; border-radius:6px; font-size:13px; margin-bottom:14px; display:none; }
+    .msg.error   { background:#fdecea; color:#c62828; border:1px solid #ffcdd2; }
+    .msg.success { background:#e8f5e9; color:#2e7d32; border:1px solid #c8e6c9; }
+    .divider { text-align:center; color:#aaa; font-size:12px; margin:16px 0; position:relative; }
+    .divider::before { content:''; position:absolute; top:50%; left:0; right:0; height:1px; background:#eee; }
+    .divider span { background:white; padding:0 10px; position:relative; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <h1>GeoEdu PRONOEI</h1>
+    <p>Sistema de análisis de educación inicial</p>
+  </div>
+
+  <div class="msg" id="msg"></div>
+
+  <div class="form-group">
+    <label>Correo electrónico</label>
+    <input type="email" id="email" placeholder="tu@correo.com" autocomplete="email"/>
+  </div>
+  <div class="form-group">
+    <label>Contraseña</label>
+    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"/>
+  </div>
+
+  <button class="btn" id="btnLogin" onclick="login()">Iniciar sesión</button>
+
+  <div class="links">
+    <a href="register.html">Crear cuenta</a>
+    <a href="recover.html">¿Olvidaste tu contraseña?</a>
+  </div>
+</div>
+
+<script>
+  const API = "https://geoedu-pronoei-api.onrender.com";
+
+  // Si ya hay token válido, redirigir al home
+  const token = localStorage.getItem("geoedu_token");
+  if (token) window.location.href = "/frontend/index.html";
+
+  document.getElementById("password").addEventListener("keydown", e => {
+    if (e.key === "Enter") login();
+  });
+
+  async function login() {
+    const email    = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const btn      = document.getElementById("btnLogin");
+    const msg      = document.getElementById("msg");
+
+    if (!email || !password) { showMsg("Completa todos los campos.", "error"); return; }
+
+    btn.disabled    = true;
+    btn.textContent = "Ingresando...";
+    msg.style.display = "none";
+
+    try {
+      const res  = await fetch(`${API}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (!res.ok) { showMsg(data.detail || "Error al iniciar sesión.", "error"); return; }
+
+      localStorage.setItem("geoedu_token",  data.access_token);
+      localStorage.setItem("geoedu_nombre", data.nombre);
+      localStorage.setItem("geoedu_email",  data.email);
+      localStorage.setItem("geoedu_rol",    data.rol);
+
+      showMsg(`Bienvenido, ${data.nombre}. Redirigiendo...`, "success");
+      setTimeout(() => window.location.href = "/frontend/index.html", 1200);
+
+    } catch(e) {
+      showMsg("Error de conexión con la API.", "error");
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = "Iniciar sesión";
+    }
+  }
+
+  function showMsg(texto, tipo) {
+    const msg = document.getElementById("msg");
+    msg.textContent    = texto;
+    msg.className      = `msg ${tipo}`;
+    msg.style.display  = "block";
+  }
+</script>
+</body>
+</html>

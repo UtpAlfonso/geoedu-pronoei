@@ -9,7 +9,7 @@ from modulo2_brecha.api.routes_brecha import router as router_brecha
 from modulo3_dashboard.api.routes_stats import router as router_stats
 from modulo4_alertas.api.routes_alertas  import router as router_alertas
 from modulo5_ia.api.routes_ia import router as router_ia
-
+from modulo_auth.api.routes_auth import router as router_auth
 
 app = FastAPI(
     title="GeoEdu PRONOEI API",
@@ -29,6 +29,7 @@ app.include_router(router_brecha, prefix="/api/brecha", tags=["Módulo 2 — Bre
 app.include_router(router_stats, prefix="/api/dashboard", tags=["Módulo 3 — Dashboard"])
 app.include_router(router_alertas,  prefix="/api/alertas",   tags=["Módulo 4 — Alertas"])
 app.include_router(router_ia, prefix="/api/ia", tags=["Módulo 5 — IA"])
+app.include_router(router_auth, prefix="/api/auth", tags=["Autenticación"])
 
 @app.get("/", tags=["Estado"])
 def home():

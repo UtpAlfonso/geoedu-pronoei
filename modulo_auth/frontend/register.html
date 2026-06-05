@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GeoEdu PRONOEI — Crear cuenta</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:linear-gradient(135deg,#1A3A5C 0%,#2E7D9E 100%); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .card { background:white; border-radius:16px; padding:40px; width:100%; max-width:440px; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+    .logo { text-align:center; margin-bottom:28px; }
+    .logo h1 { font-size:24px; font-weight:700; color:#1A3A5C; }
+    .logo p  { font-size:13px; color:#888; margin-top:4px; }
+    .form-group { margin-bottom:14px; }
+    .form-group label { display:block; font-size:13px; font-weight:500; color:#444; margin-bottom:6px; }
+    .form-group input { width:100%; padding:11px 14px; border:1.5px solid #ddd; border-radius:8px; font-size:14px; outline:none; transition:border 0.2s; }
+    .form-group input:focus { border-color:#1A3A5C; }
+    .hint { font-size:11px; color:#aaa; margin-top:4px; }
+    .btn { width:100%; padding:12px; background:#1A3A5C; color:white; border:none; border-radius:8px; font-size:15px; font-weight:600; cursor:pointer; margin-top:6px; transition:background 0.2s; }
+    .btn:hover { background:#254f7a; }
+    .btn:disabled { background:#aaa; cursor:not-allowed; }
+    .link-login { text-align:center; margin-top:16px; font-size:13px; color:#888; }
+    .link-login a { color:#1A3A5C; text-decoration:none; font-weight:500; }
+    .link-login a:hover { text-decoration:underline; }
+    .msg { padding:10px 14px; border-radius:6px; font-size:13px; margin-bottom:14px; display:none; }
+    .msg.error   { background:#fdecea; color:#c62828; border:1px solid #ffcdd2; }
+    .msg.success { background:#e8f5e9; color:#2e7d32; border:1px solid #c8e6c9; }
+    .req { font-size:11px; color:#aaa; margin-top:3px; }
+    .req.ok  { color:#2e7d32; }
+    .req.bad { color:#c62828; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <h1>GeoEdu PRONOEI</h1>
+    <p>Crear una nueva cuenta</p>
+  </div>
+
+  <div class="msg" id="msg"></div>
+
+  <div class="form-group">
+    <label>Nombre completo</label>
+    <input type="text" id="nombre" placeholder="Ej: María García López" autocomplete="name"/>
+  </div>
+  <div class="form-group">
+    <label>Correo electrónico</label>
+    <input type="email" id="email" placeholder="tu@correo.com" autocomplete="email"/>
+    <div class="hint">Recibirás un correo de verificación</div>
+  </div>
+  <div class="form-group">
+    <label>Contraseña</label>
+    <input type="password" id="password" placeholder="Mínimo 8 caracteres" oninput="checkPassword()" autocomplete="new-password"/>
+    <div class="req" id="reqLen">• Mínimo 8 caracteres</div>
+    <div class="req" id="reqNum">• Al menos un número</div>
+  </div>
+  <div class="form-group">
+    <label>Confirmar contraseña</label>
+    <input type="password" id="password2" placeholder="Repite tu contraseña" oninput="checkMatch()" autocomplete="new-password"/>
+    <div class="req" id="reqMatch">• Las contraseñas deben coincidir</div>
+  </div>
+
+  <button class="btn" id="btnReg" onclick="registrar()">Crear cuenta</button>
+
+  <div class="link-login">
+    ¿Ya tienes cuenta? <a href="login.html">Iniciar sesión</a>
+  </div>
+</div>
+
+<script>
+  const API = "https://geoedu-pronoei-api.onrender.com";
+
+  function checkPassword() {
+    const val = document.getElementById("password").value;
+    document.getElementById("reqLen").className = "req " + (val.length >= 8 ? "ok" : "bad");
+    document.getElementById("reqNum").className = "req " + (/\d/.test(val) ? "ok" : "bad");
+  }
+
+  function checkMatch() {
+    const p1 = document.getElementById("password").value;
+    const p2 = document.getElementById("password2").value;
+    document.getElementById("reqMatch").className = "req " + (p1 === p2 && p2 ? "ok" : "bad");
+  }
+
+  async function registrar() {
+    const nombre   = document.getElementById("nombre").value.trim();
+    const email    = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const password2= document.getElementById("password2").value;
+    const btn      = document.getElementById("btnReg");
+
+    if (!nombre || !email || !password) { showMsg("Completa todos los campos.", "error"); return; }
+    if (password.length < 8)            { showMsg("La contraseña debe tener al menos 8 caracteres.", "error"); return; }
+    if (password !== password2)         { showMsg("Las contraseñas no coinciden.", "error"); return; }
+    if (!/\d/.test(password))           { showMsg("La contraseña debe contener al menos un número.", "error"); return; }
+
+    btn.disabled    = true;
+    btn.textContent = "Creando cuenta...";
+
+    try {
+      const res  = await fetch(`${API}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre, email, password })
+      });
+      const data = await res.json();
+
+      if (!res.ok) { showMsg(data.detail || "Error al registrar.", "error"); return; }
+
+      showMsg("✅ Cuenta creada. Revisa tu correo para verificar tu cuenta.", "success");
+      setTimeout(() => window.location.href = "login.html", 3000);
+
+    } catch(e) {
+      showMsg("Error de conexión.", "error");
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = "Crear cuenta";
+    }
+  }
+
+  function showMsg(texto, tipo) {
+    const msg = document.getElementById("msg");
+    msg.textContent   = texto;
+    msg.className     = `msg ${tipo}`;
+    msg.style.display = "block";
+  }
+</script>
+</body>
+</html>

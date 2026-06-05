@@ -6,3 +6,8 @@ scikit-learn==1.5.2
 pandas==2.2.3
 numpy==1.26.4
 joblib==1.4.2
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.9
+aiosmtplib==3.0.1s
+bcrypt==5.0.0
