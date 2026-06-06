@@ -249,6 +249,26 @@
       <div id="navDotApi" style="width:8px;height:8px;border-radius:50%;background:#aaa;flex-shrink:0;"></div>
       <span id="navApiEstado">Verificando...</span>
     </div>
+    <!-- Reemplaza esta parte del header superior -->
+<div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+  
+  <!-- Indicador API -->
+  <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#B0C4DE;">
+    <div id="nbDot" style="width:8px;height:8px;border-radius:50%;background:#aaa;flex-shrink:0;"></div>
+    <span id="nbEstado">Verificando...</span>
+  </div>
+
+  <!-- Info usuario -->
+  <span id="nbUsuario" style="font-size:12px;color:#B0C4DE;border-left:1px solid rgba(255,255,255,0.2);padding-left:12px;"></span>
+
+  <!-- Botón cerrar sesión -->
+  <button onclick="cerrarSesion()"
+    style="background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);
+           padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;">
+    Cerrar sesión
+  </button>
+
+</div>
   </div>
  
   <!-- Navegación -->
@@ -474,6 +494,31 @@
       console.log("Error al conectar con la API, se mantienen valores estáticos.");
     }
   }
+
+  // Mostrar nombre del usuario logueado
+const nbNombre = localStorage.getItem("geoedu_nombre");
+if (nbNombre) {
+  document.getElementById("nbUsuario").textContent = "👤 " + nbNombre;
+}
+
+// Cerrar sesión
+function cerrarSesion() {
+  localStorage.removeItem("geoedu_token");
+  localStorage.removeItem("geoedu_nombre");
+  localStorage.removeItem("geoedu_email");
+  localStorage.removeItem("geoedu_rol");
+  window.location.href = "/modulo_auth/frontend/login.html";
+}
+// Verificar sesión activa — redirigir si no hay token
+function verificarSesion() {
+  const token = localStorage.getItem("geoedu_token");
+  if (!token) {
+    window.location.href = "/modulo_auth/frontend/login.html";
+    return false;
+  }
+  return true;
+}
+verificarSesion();
 
   cargarStats();
 </script>
