@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>GeoEdu — Dashboard de Tendencias</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family:'Segoe UI',sans-serif; background:#f0f2f5; min-height:100vh; }
@@ -100,6 +101,50 @@
       <div class="sub" id="tCiclo2">— en Ciclo II</div>
     </div>
   </div>
+
+  <div style="
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:12px;
+  padding:0 24px;
+  margin-bottom:16px;
+">
+  <span style="font-size:13px;color:#888;" id="lblExportInfo">
+    Exporta los resultados del modelo IA a Excel
+  </span>
+ 
+  <button id="btnExcel" onclick="exportarExcel()"
+    style="
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 22px;
+      background:linear-gradient(135deg,#1D6F42 0%,#2E7D32 100%);
+      color:white;
+      border:none;
+      border-radius:10px;
+      font-size:14px;
+      font-weight:600;
+      cursor:pointer;
+      box-shadow:0 4px 14px rgba(30,111,66,0.35);
+      transition:all 0.2s;
+      position:relative;
+      overflow:hidden;
+    "
+    onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(30,111,66,0.45)'"
+    onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 14px rgba(30,111,66,0.35)'"
+  >
+    <!-- Icono Excel SVG -->
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <rect x="2" y="3" width="20" height="18" rx="2" fill="white" opacity="0.15"/>
+      <path d="M14 3v4a1 1 0 001 1h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M8 11l2.5 4 2.5-4M8 19l2.5-4 2.5 4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V8l-6-5z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span id="btnExcelText">Exportar IA a Excel</span>
+  </button>
+</div>
 
   <!-- Gráficos 2x2 -->
   <div class="graficos">
@@ -304,6 +349,160 @@
     cargarGraficoTurno(),
     cargarGraficoRegiones(),
   ]);
+
+  async function exportarExcel() {
+  const btn     = document.getElementById("btnExcel");
+  const btnText = document.getElementById("btnExcelText");
+  const info    = document.getElementById("lblExportInfo");
+ 
+  // Estado cargando
+  btn.disabled          = true;
+  btn.style.background  = "linear-gradient(135deg,#888 0%,#aaa 100%)";
+  btn.style.boxShadow   = "none";
+  btnText.textContent   = "Generando Excel...";
+  info.textContent      = "Obteniendo datos del modelo IA...";
+ 
+  try {
+    const API = "https://geoedu-pronoei-api.onrender.com";
+ 
+    // ── Obtener datos de los 3 endpoints ──
+    const [resIA, resResumen, resBrecha] = await Promise.all([
+      fetch(`${API}/api/ia/prediccion?top=100`),
+      fetch(`${API}/api/dashboard/resumen`),
+      fetch(`${API}/api/brecha/ranking?top=50`),
+    ]);
+ 
+    const dataIA      = await resIA.json();
+    const dataResumen = await resResumen.json();
+    const dataBrecha  = await resBrecha.json();
+ 
+    // ── Crear workbook ──
+    const wb = XLSX.utils.book_new();
+ 
+    // ── HOJA 1: Predicciones IA ──
+    const filasTitulo = [
+      ["GeoEdu PRONOEI — Resultados del Modelo de Inteligencia Artificial"],
+      ["Algoritmo: Random Forest Classifier | Generado el: " + new Date().toLocaleDateString("es-PE")],
+      [],
+      ["#", "Distrito", "Provincia", "Departamento", "Área", "Total Programas", "% Rural", "Probabilidad de Riesgo (%)", "Nivel de Riesgo"]
+    ];
+ 
+    const filasIA = dataIA.predicciones.map((p, i) => [
+      i + 1,
+      p.D_DIST,
+      p.D_PROV,
+      p.D_DPTO,
+      p.DAREACENSO,
+      p.total_programas,
+      p.pct_rural ?? 0,
+      p.prob_riesgo,
+      p.nivel_riesgo,
+    ]);
+ 
+    const wsIA = XLSX.utils.aoa_to_sheet([...filasTitulo, ...filasIA]);
+ 
+    // Ancho de columnas
+    wsIA["!cols"] = [
+      { wch: 5 }, { wch: 22 }, { wch: 20 }, { wch: 16 },
+      { wch: 10 }, { wch: 16 }, { wch: 10 }, { wch: 24 }, { wch: 14 }
+    ];
+ 
+    // Combinar celdas del título
+    wsIA["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } },
+    ];
+ 
+    XLSX.utils.book_append_sheet(wb, wsIA, "IA — Predicciones");
+ 
+    // ── HOJA 2: Resumen nacional ──
+    const filasResumen = [
+      ["GeoEdu PRONOEI — Resumen Nacional de Cobertura"],
+      ["Fuente: MINEDU — Datos Abiertos | " + new Date().toLocaleDateString("es-PE")],
+      [],
+      ["Indicador", "Valor"],
+      ["Total de programas PRONOEI", dataResumen.total_programas],
+      ["Total de departamentos", dataResumen.total_dptos],
+      ["Total de distritos con cobertura", dataResumen.total_distritos],
+      ["Programas en zona rural", dataResumen.total_rural],
+      ["Programas en zona urbana", dataResumen.total_urbana],
+      ["% Rural", Math.round((dataResumen.total_rural / dataResumen.total_programas) * 100) + "%"],
+      ["Programas Ciclo I (0-2 años)", dataResumen.ciclo_1],
+      ["Programas Ciclo II (3-5 años)", dataResumen.ciclo_2],
+    ];
+ 
+    const wsResumen = XLSX.utils.aoa_to_sheet(filasResumen);
+    wsResumen["!cols"] = [{ wch: 35 }, { wch: 20 }];
+    wsResumen["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } },
+    ];
+    XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen Nacional");
+ 
+    // ── HOJA 3: Índice de brecha ──
+    const filasBrecha = [
+      ["GeoEdu PRONOEI — Índice de Brecha por Distrito"],
+      ["Top 50 distritos con menor cobertura | " + new Date().toLocaleDateString("es-PE")],
+      [],
+      ["#", "Distrito", "Provincia", "Departamento", "Total Programas", "Programas Rural", "Programas Urbana", "% Rural"],
+    ];
+ 
+    dataBrecha.ranking.forEach((r, i) => {
+      filasBrecha.push([
+        i + 1,
+        r.D_DIST,
+        r.D_PROV,
+        r.D_DPTO,
+        r.total_programas,
+        r.rural ?? 0,
+        r.urbana ?? 0,
+        r.pct_rural ?? 0,
+      ]);
+    });
+ 
+    const wsBrecha = XLSX.utils.aoa_to_sheet(filasBrecha);
+    wsBrecha["!cols"] = [
+      { wch: 5 }, { wch: 22 }, { wch: 20 }, { wch: 16 },
+      { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 10 }
+    ];
+    wsBrecha["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } },
+    ];
+    XLSX.utils.book_append_sheet(wb, wsBrecha, "Índice de Brecha");
+ 
+    // ── Descargar el archivo ──
+    const fecha    = new Date().toISOString().slice(0, 10);
+    const filename = `GeoEdu_PRONOEI_IA_${fecha}.xlsx`;
+    XLSX.writeFile(wb, filename);
+ 
+    // Estado éxito
+    btnText.textContent  = "✅ Descargado";
+    info.textContent     = `Archivo "${filename}" descargado correctamente`;
+    btn.style.background = "linear-gradient(135deg,#1D6F42 0%,#2E7D32 100%)";
+    btn.style.boxShadow  = "0 4px 14px rgba(30,111,66,0.35)";
+ 
+    setTimeout(() => {
+      btnText.textContent  = "Exportar IA a Excel";
+      info.textContent     = "Exporta los resultados del modelo IA a Excel";
+      btn.disabled         = false;
+    }, 3000);
+ 
+  } catch(e) {
+    console.error("Error exportando:", e);
+    btnText.textContent  = "❌ Error al exportar";
+    info.textContent     = "Verifica que la API esté activa e intenta de nuevo";
+    btn.style.background = "linear-gradient(135deg,#c62828 0%,#e53935 100%)";
+ 
+    setTimeout(() => {
+      btnText.textContent  = "Exportar IA a Excel";
+      info.textContent     = "Exporta los resultados del modelo IA a Excel";
+      btn.style.background = "linear-gradient(135deg,#1D6F42 0%,#2E7D32 100%)";
+      btn.style.boxShadow  = "0 4px 14px rgba(30,111,66,0.35)";
+      btn.disabled         = false;
+    }, 3000);
+  }
+}
 </script>
 </body>
 </html>
